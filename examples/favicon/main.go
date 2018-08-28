@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/golangtools/gin"
 	"github.com/thinkerou/favicon"
 )
 

@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+type FromConversion interface {
+	FromForm([]string) error
+}
+
 func mapForm(ptr interface{}, form map[string][]string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
@@ -62,6 +66,27 @@ func mapForm(ptr interface{}, form map[string][]string) error {
 			}
 			inputValue = make([]string, 1)
 			inputValue[0] = defaultValue
+		}
+
+		if structField.CanAddr() {
+			if structConvert, ok := structField.Addr().Interface().(FromConversion); ok {
+				err := structConvert.FromForm(inputValue)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+
+		if _, ok := structField.Interface().(FromConversion); ok {
+			if structField.Kind() == reflect.Ptr && structField.IsNil() {
+				structField.Set(reflect.New(structField.Type().Elem()))
+			}
+			err := structField.Interface().(FromConversion).FromForm(inputValue)
+			if err != nil {
+				return err
+			}
+			continue
 		}
 
 		numElems := len(inputValue)
